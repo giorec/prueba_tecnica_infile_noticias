@@ -1,0 +1,55 @@
+name: infile_noticias_app
+description: "App de noticias Infile con seguridad de nivel bancario."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Navegación ─────────────────────────────────────────────────────────────
+  go_router: ^14.6.0              # Enrutamiento declarativo con guards de sesión
+
+  # ── Estado ─────────────────────────────────────────────────────────────────
+  flutter_bloc: ^8.1.6            # BLoC / Cubit para manejo de estado
+  equatable: ^2.0.5               # Comparación de value objects
+
+  # ── Inyección de dependencias ───────────────────────────────────────────────
+  get_it: ^8.0.3                  # Service Locator
+
+  # ── Red ────────────────────────────────────────────────────────────────────
+  dio: ^5.7.0                     # Cliente HTTP con interceptores
+  pretty_dio_logger: ^1.4.0       # Logger de requests (solo desarrollo)
+
+  # ── Almacenamiento seguro (NUNCA SharedPreferences para tokens) ────────────
+  flutter_secure_storage: ^9.2.4  # Keychain (iOS) / Keystore (Android)
+
+  # ── Seguridad ──────────────────────────────────────────────────────────────
+  freerasp: ^6.6.0                # Detección root/jailbreak/emulador
+
+  # ── UI ─────────────────────────────────────────────────────────────────────
+  shimmer: ^3.0.0                 # Efecto shimmer para carga de contenido
+  cached_network_image: ^3.4.1    # Imágenes con caché
+  google_fonts: ^6.2.1            # Tipografía corporativa (Inter)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true
+
+  # Activos: logo Infile y fuentes
+  assets:
+    - assets/images/
+
+  # Tipografía local (opcional, se usa Google Fonts como fallback)
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
