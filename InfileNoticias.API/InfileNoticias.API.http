@@ -1,0 +1,6 @@
+@InfileNoticias.API_HostAddress = http://localhost:5072
+
+GET {{InfileNoticias.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
