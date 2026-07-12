@@ -1,0 +1,24 @@
+## .NET
+obj/
+bin/
+*.user
+*.suo
+*.vs/
+.vs/
+
+## User Secrets (NUNCA confirmar al repositorio)
+secrets.json
+appsettings.*.local.json
+
+## Entorno
+.env
+.env.*
+
+## macOS
+.DS_Store
+
+## Logs
+*.log
+logs/
+
+## EF Core Migrations snapshot no se ignora (se confirma al repo)
