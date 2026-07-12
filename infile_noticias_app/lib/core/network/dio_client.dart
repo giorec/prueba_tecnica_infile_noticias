@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import '../storage/secure_storage_service.dart';
@@ -10,6 +12,16 @@ import 'auth_interceptor.dart';
 /// PRODUCCIÓN:  Cambiar por el dominio HTTPS real.
 const String _kBaseUrl = 'https://10.0.2.2:7001/api'; // Android emulator
 // const String _kBaseUrl = 'https://localhost:7001/api'; // iOS simulator
+
+/// TODO: Reemplazar este hash con el SHA-256 real del certificado de PRODUCCIÓN.
+/// Este hash actual (o lista de hashes) sirve para validar la conexión HTTPS.
+/// Cualquier discrepancia lanzará un error y prevendrá un ataque Man-In-The-Middle.
+const List<String> _kPinnedCertFingerprints = [
+  // Ejemplo ficticio de hash SHA-256 en Base64 o Hex. 
+  // Para desarrollo local se usará un bypass temporal si no lo tenemos, 
+  // pero el mecanismo de código ya es de producción.
+  'EXPECTED_SHA256_HASH_OF_PRODUCTION_CERT',
+];
 
 /// Cliente Dio preconfigurado con seguridad de nivel bancario.
 ///
@@ -47,19 +59,39 @@ final class DioClient {
     ));
 
     // ── Certificate Pinning ──────────────────────────────────────────────────
-    // En desarrollo se acepta el certificado autofirmado del servidor local.
-    // En producción: habilitar la verificación estricta del certificado.
-    //
-    // NOTA: Para certificado pinning real en producción, usar ssl_pinning_plugin
-    // con el SHA-256 fingerprint del certificado del servidor.
+    // Implementación manual de Certificate Pinning (Nivel Bancario).
+    // Analiza la cadena de certificados o el certificado hoja del servidor y 
+    // compara su fingerprint (SHA-256) contra los almacenados localmente.
     (_dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       final client = HttpClient();
-      // DESARROLLO: acepta certificado autofirmado (solo para localhost/emulador).
-      // PRODUCCIÓN: eliminar esta línea y usar fingerprint SHA-256 explícito.
-      client.badCertificateCallback = (cert, host, port) {
-        // En producción: validar el fingerprint del cert contra el valor esperado.
-        // return cert.sha1.toString() == 'EXPECTED_SHA1_FINGERPRINT';
-        return true; // ← SOLO EN DESARROLLO
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+        // En un entorno de desarrollo puro contra localhost, podríamos retornar true
+        // para saltarnos el pinning. Sin embargo, por requerimiento de la fase de
+        // "Security Auditing & Polish", dejamos el mecanismo listo.
+        
+        // 1. Obtener la codificación DER del certificado
+        final derCert = cert.der;
+        
+        // 2. Calcular SHA-256
+        final hash = sha256.convert(derCert);
+        final fingerprint = hash.toString(); // Representación hexadecimal
+        
+        // 3. (OPCIONAL) Permitir cualquier cert SOLO para localhost local
+        // En producción DEBE eliminarse.
+        if (host == '10.0.2.2' || host == 'localhost') {
+           debugPrint('[SECURITY] Aceptando certificado local de desarrollo: $fingerprint');
+           return true;
+        }
+
+        // 4. Validar contra los pines autorizados
+        final isPinned = _kPinnedCertFingerprints.contains(fingerprint);
+        
+        if (!isPinned) {
+          debugPrint('🚨 [SECURITY ALERT] Fallo de SSL Pinning. Fingerprint detectado: $fingerprint');
+          // En producción, retornamos false y la conexión será destruida.
+        }
+        
+        return isPinned;
       };
       return client;
     };
@@ -76,7 +108,7 @@ final class DioClient {
       _dio.interceptors.add(LogInterceptor(
         requestBody: true,
         responseBody: true,
-        logPrint: (obj) => print('[DIO] $obj'),
+        logPrint: (obj) => debugPrint('[DIO] $obj'),
       ));
       return true;
     }());

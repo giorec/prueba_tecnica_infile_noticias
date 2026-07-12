@@ -198,6 +198,9 @@ var app = builder.Build();
 // ── Middleware de excepción global (debe ir primero) ─────────────────────────
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+// ── Security Headers Middleware (Capa de defensa HTTP) ──────────────────────
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 // ── Swagger (solo en Development) ───────────────────────────────────────────
 if (app.Environment.IsDevelopment())
 {
