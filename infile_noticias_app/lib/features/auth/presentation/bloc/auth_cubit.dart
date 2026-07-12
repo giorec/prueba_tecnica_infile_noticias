@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/auth_usecases.dart';
 import '../../../../core/storage/secure_storage_service.dart';
+import '../../../../core/security/biometric_service.dart';
 import 'auth_state.dart';
 
 /// Cubit que maneja el estado de autenticación de la aplicación.
@@ -12,16 +13,19 @@ final class AuthCubit extends Cubit<AuthState> {
   final RegisterUseCase _registerUseCase;
   final LogoutUseCase _logoutUseCase;
   final SecureStorageService _storage;
+  final BiometricService _biometricService;
 
   AuthCubit({
     required LoginUseCase loginUseCase,
     required RegisterUseCase registerUseCase,
     required LogoutUseCase logoutUseCase,
     required SecureStorageService storage,
+    required BiometricService biometricService,
   })  : _loginUseCase = loginUseCase,
         _registerUseCase = registerUseCase,
         _logoutUseCase = logoutUseCase,
         _storage = storage,
+        _biometricService = biometricService,
         super(const AuthInitial());
 
   /// Verifica al iniciar la app si existe una sesión válida en Secure Storage.
@@ -31,17 +35,22 @@ final class AuthCubit extends Cubit<AuthState> {
     emit(const AuthCheckingSession());
 
     final hasSession = await _storage.hasValidSession();
-    if (hasSession) {
-      emit(const AuthAuthenticated());
-    } else {
-      // Verificar si al menos hay un Refresh Token para intentar renovar.
-      final hasRefresh = await _storage.hasRefreshToken();
-      if (hasRefresh) {
-        // El interceptor de Dio manejará la renovación en la próxima llamada.
+    final hasRefresh = await _storage.hasRefreshToken();
+
+    if (hasSession || hasRefresh) {
+      // Requerir biometría antes de permitir el acceso al Feed.
+      final isAuthenticated = await _biometricService.authenticate(
+        reason: 'Verifique su identidad para acceder a su Feed seguro',
+      );
+
+      if (isAuthenticated) {
         emit(const AuthAuthenticated());
       } else {
-        emit(const AuthUnauthenticated());
+        // Si cancela la biometría o falla repetidamente, cerramos sesión por seguridad.
+        await logout();
       }
+    } else {
+      emit(const AuthUnauthenticated());
     }
   }
 

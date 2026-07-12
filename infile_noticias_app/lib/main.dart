@@ -7,6 +7,8 @@ import 'core/security/rasp_service.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'features/auth/presentation/bloc/auth_cubit.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
+import 'features/feed/presentation/bloc/feed_cubit.dart';
+import 'core/security/inactivity_wrapper.dart';
 import 'injection_container.dart';
 
 /// Punto de entrada de la aplicación Infile Noticias.
@@ -59,33 +61,42 @@ class InfileNoticiasApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AuthCubit>(
-      // Se crea una instancia del AuthCubit disponible para toda la app.
-      create: (_) => sl<AuthCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(
+          create: (_) => sl<AuthCubit>(),
+        ),
+        BlocProvider<FeedCubit>(
+          create: (_) => sl<FeedCubit>(),
+        ),
+      ],
       child: Builder(
         builder: (context) {
           // El router se construye aquí para tener acceso al BlocProvider.
           final router = buildAppRouter(context);
 
-          return MaterialApp.router(
-            title: 'Infile Noticias',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.light,
+          return InactivityWrapper(
+            timeout: const Duration(minutes: 5), // Límite de inactividad
+            child: MaterialApp.router(
+              title: 'Infile Noticias',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light,
 
-            // ── GoRouter ──────────────────────────────────────────────────────
-            routerConfig: router,
+              // ── GoRouter ──────────────────────────────────────────────────────
+              routerConfig: router,
 
-            // ── Builder para refresh del router cuando cambia el estado Auth ──
-            // GoRouter escucha el AuthCubit para re-evaluar los guards de sesión.
-            builder: (context, child) {
-              return BlocListener<AuthCubit, AuthState>(
-                listener: (context, state) {
-                  // Forzar re-evaluación del redirect cuando cambia la sesión.
-                  router.refresh();
-                },
-                child: child!,
-              );
-            },
+              // ── Builder para refresh del router cuando cambia el estado Auth ──
+              // GoRouter escucha el AuthCubit para re-evaluar los guards de sesión.
+              builder: (context, child) {
+                return BlocListener<AuthCubit, AuthState>(
+                  listener: (context, state) {
+                    // Forzar re-evaluación del redirect cuando cambia la sesión.
+                    router.refresh();
+                  },
+                  child: child!,
+                );
+              },
+            ),
           );
         },
       ),

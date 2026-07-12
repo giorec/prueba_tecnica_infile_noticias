@@ -6,6 +6,7 @@ import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
+import '../../features/feed/presentation/pages/feed_page.dart';
 
 /// Rutas nombradas de la aplicación.
 ///
@@ -94,11 +95,11 @@ GoRouter buildAppRouter(BuildContext context) {
         ),
       ),
 
-      // Home — ruta protegida (placeholder para Fase 4).
+      // Home — ruta protegida con el Feed de Noticias 70/30
       GoRoute(
         path: AppRoutes.home,
         name: 'home',
-        builder: (_, __) => const _HomeStub(),
+        builder: (_, __) => const FeedPage(),
       ),
     ],
 
@@ -122,19 +123,4 @@ Widget _fadeTransition(
     opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
     child: child,
   );
-}
-
-/// Stub del home — se reemplaza en Fase 4 por el feed real de noticias.
-class _HomeStub extends StatelessWidget {
-  const _HomeStub();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Infile Noticias')),
-      body: const Center(
-        child: Text('Feed de noticias — Fase 4'),
-      ),
-    );
-  }
 }
