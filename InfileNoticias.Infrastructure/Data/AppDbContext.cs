@@ -19,6 +19,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     /// <summary>Tabla de Refresh Tokens rotativos.</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    /// <summary>Tabla de votos de los usuarios sobre las noticias.</summary>
+    public DbSet<NewsVote> NewsVotes => Set<NewsVote>();
+
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -61,6 +64,26 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── NewsVote ─────────────────────────────────────────────────────────
+        builder.Entity<NewsVote>(entity =>
+        {
+            entity.ToTable("NewsVotes");
+            entity.HasKey(nv => nv.Id);
+            
+            entity.Property(nv => nv.ArticleId).HasMaxLength(255).IsRequired();
+            entity.Property(nv => nv.Category).HasMaxLength(100).IsRequired();
+            entity.Property(nv => nv.CreatedAtUtc).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+            // Constraint único: Un usuario solo puede tener un voto activo por noticia.
+            entity.HasIndex(nv => new { nv.UserId, nv.ArticleId }).IsUnique();
+
+            // Relación
+            entity.HasOne(nv => nv.User)
+                .WithMany() // No agregamos colección a ApplicationUser para mantenerlo ligero
+                .HasForeignKey(nv => nv.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

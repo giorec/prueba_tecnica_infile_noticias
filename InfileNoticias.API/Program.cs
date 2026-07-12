@@ -131,6 +131,12 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Fase 3: Motor de Votaciones y Feed 70/30
+builder.Services.AddScoped<INewsService, MockNewsService>();
+builder.Services.AddScoped<IFeedService, FeedAssemblerService>();
+builder.Services.AddSingleton<VoteChannel>();
+builder.Services.AddHostedService<VoteProcessorBackgroundService>();
+
 // ── 6. CORS ──────────────────────────────────────────────────────────────────
 // Configuración restrictiva: solo permite el origen del cliente Flutter.
 // En producción, cambiar "*" por el dominio real.
